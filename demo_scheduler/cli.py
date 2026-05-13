@@ -318,6 +318,18 @@ def validate_config(config_path: Path | None) -> None:
 
 
 @main.command()
+@click.option("--host", default="127.0.0.1", help="Bind address (use 0.0.0.0 to expose).")
+@click.option("--port", default=8000, type=int)
+@click.option("--reload", is_flag=True, default=False, help="Uvicorn autoreload (dev).")
+def serve(host: str, port: int, reload: bool) -> None:
+    """Start the FastAPI viewer (catalog + variables + plan)."""
+    import uvicorn
+
+    click.echo(f"Serving on http://{host}:{port}")
+    uvicorn.run("demo_scheduler.web.app:app", host=host, port=port, reload=reload)
+
+
+@main.command()
 @click.option("--plan", "plan_path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True)
 def explain(plan_path: Path) -> None:
     """Print a KPI summary for a saved plan.json."""

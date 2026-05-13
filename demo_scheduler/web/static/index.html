@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DEMO Pharma — Scheduler Viewer</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2128;
+      --panel-2: #232c35;
+      --border: #2d3742;
+      --text: #d8e0e8;
+      --text-dim: #8a96a3;
+      --accent: #5eb4ff;
+      --hard: #ff7a7a;
+      --soft: #ffce5e;
+      --ok: #5edc8f;
+      --milp: #5eb4ff;
+      --cpsat: #c490ff;
+      --both: #ffce5e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.45;
+    }
+    header {
+      padding: 14px 24px; border-bottom: 1px solid var(--border);
+      background: var(--panel); display: flex; align-items: baseline; gap: 16px;
+    }
+    header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+    header .sub { color: var(--text-dim); font-size: 13px; }
+    nav { display: flex; gap: 4px; padding: 0 24px; background: var(--panel); border-bottom: 1px solid var(--border); }
+    nav button {
+      background: transparent; color: var(--text-dim); border: 0; border-bottom: 2px solid transparent;
+      padding: 12px 14px; font-size: 14px; cursor: pointer; font-family: inherit;
+    }
+    nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+    nav button:hover { color: var(--text); }
+    main { padding: 20px 24px 60px 24px; max-width: 1400px; }
+    section { display: none; }
+    section.active { display: block; }
+    h2 { font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: var(--text); }
+    .summary { color: var(--text-dim); font-size: 13px; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--text-dim); font-weight: 500; background: var(--panel); position: sticky; top: 0; }
+    tr:hover td { background: var(--panel-2); }
+    code { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace; font-size: 12px; color: var(--accent); }
+    .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+    .pill-hard { background: rgba(255,122,122,0.15); color: var(--hard); }
+    .pill-soft { background: rgba(255,206,94,0.15); color: var(--soft); }
+    .pill-MILP_master { background: rgba(94,180,255,0.15); color: var(--milp); }
+    .pill-CP_SAT_seq { background: rgba(196,144,255,0.15); color: var(--cpsat); }
+    .pill-both { background: rgba(255,206,94,0.15); color: var(--both); }
+    .pill-off { background: rgba(138,150,163,0.18); color: var(--text-dim); }
+    .pill-on { background: rgba(94,220,143,0.15); color: var(--ok); }
+    .err { color: var(--hard); padding: 12px; border: 1px solid var(--hard); border-radius: 4px; background: rgba(255,122,122,0.06); }
+    .params { color: var(--text-dim); font-size: 12px; }
+    .params em { color: var(--text); font-style: normal; }
+    .row-card { border: 1px solid var(--border); background: var(--panel); padding: 14px 16px; margin-bottom: 10px; border-radius: 4px; }
+    .row-card .head { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+    .row-card .name { font-weight: 600; font-size: 14px; }
+    .row-card .id { color: var(--text-dim); font-size: 12px; font-family: ui-monospace, monospace; }
+    .row-card .desc { color: var(--text-dim); font-size: 13px; margin: 6px 0 8px 0; white-space: pre-wrap; }
+    .row-card .rules { font-size: 12px; color: var(--text-dim); padding-left: 16px; margin: 4px 0; }
+    .filter-bar { display: flex; gap: 12px; margin-bottom: 14px; align-items: center; }
+    .filter-bar input, .filter-bar select {
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 4px;
+      padding: 6px 10px; font-size: 13px; font-family: inherit;
+    }
+    .filter-bar input { width: 280px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .kpi { background: var(--panel); border: 1px solid var(--border); padding: 10px 12px; border-radius: 4px; }
+    .kpi .label { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .kpi .value { font-size: 20px; font-weight: 600; margin-top: 2px; }
+    .badge-unfilled { color: var(--hard); font-weight: 500; }
+    .badge-ok { color: var(--ok); }
+    .placement { font-family: ui-monospace, monospace; font-size: 12px; color: var(--text-dim); }
+    .placement em { color: var(--text); font-style: normal; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DEMO Pharma — Scheduler</h1>
+    <span class="sub">Phase 2 viewer · catalog + variables + latest plan</span>
+  </header>
+  <nav>
+    <button data-tab="constraints" class="active">Constraints</button>
+    <button data-tab="variables">Variables</button>
+    <button data-tab="schedule">Schedule</button>
+  </nav>
+  <main>
+    <section id="constraints" class="active">
+      <h2>Constraint catalog</h2>
+      <div class="summary" id="constraints-summary">loading…</div>
+      <div class="filter-bar">
+        <input id="cf-search" placeholder="filter by id, name, category…" />
+        <select id="cf-severity"><option value="">all severities</option><option value="hard">hard</option><option value="soft">soft</option></select>
+        <select id="cf-layer"><option value="">all layers</option><option value="MILP_master">MILP_master</option><option value="CP_SAT_seq">CP_SAT_seq</option><option value="both">both</option></select>
+        <select id="cf-enabled"><option value="">enabled + disabled</option><option value="true">enabled only</option><option value="false">disabled only</option></select>
+      </div>
+      <div id="constraints-list"></div>
+    </section>
+
+    <section id="variables">
+      <h2>Decision variables</h2>
+      <div class="summary">The MILP master model carries these decision variables. Sparse index sets (OMW, MFW, COIDX) restrict to the eligible cells only.</div>
+      <table id="variables-table">
+        <thead><tr><th>Name</th><th>Domain</th><th>Index</th><th>Purpose</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="schedule">
+      <h2>Scheduled orders</h2>
+      <div class="summary" id="schedule-summary">loading…</div>
+      <div id="schedule-kpis" class="kpis"></div>
+      <div class="filter-bar">
+        <input id="sf-search" placeholder="filter by order, customer, material…" />
+        <select id="sf-machine"><option value="">all machines</option></select>
+        <select id="sf-status"><option value="">all</option><option value="filled">filled</option><option value="unfilled">unfilled</option></select>
+      </div>
+      <table id="schedule-table">
+        <thead>
+          <tr>
+            <th>Order</th><th>Customer</th><th>Material</th><th>Format</th>
+            <th style="text-align:right">Demand</th><th style="text-align:right">Packed</th>
+            <th>Placements</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+document.querySelectorAll("nav button").forEach((b) => {
+  b.addEventListener("click", () => {
+    $$("nav button").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    $$("main section").forEach((x) => x.classList.remove("active"));
+    $("#" + b.dataset.tab).classList.add("active");
+  });
+});
+
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+function fmtNum(n) {
+  if (n === null || n === undefined) return "—";
+  if (typeof n === "number" && !Number.isInteger(n)) n = Math.round(n);
+  return n.toLocaleString();
+}
+
+function pill(cls, text) {
+  return `<span class="pill pill-${cls}">${text}</span>`;
+}
+
+let CONSTRAINTS = [];
+
+function renderConstraints() {
+  const q = $("#cf-search").value.toLowerCase();
+  const sev = $("#cf-severity").value;
+  const layer = $("#cf-layer").value;
+  const enabledFilter = $("#cf-enabled").value;
+
+  const filtered = CONSTRAINTS.filter((c) => {
+    if (sev && c.severity !== sev) return false;
+    if (layer && c.solver_layer !== layer) return false;
+    if (enabledFilter === "true" && !c.enabled) return false;
+    if (enabledFilter === "false" && c.enabled) return false;
+    if (q) {
+      const blob = (c.id + " " + c.name + " " + c.category + " " + c.pattern).toLowerCase();
+      if (!blob.includes(q)) return false;
+    }
+    return true;
+  });
+
+  $("#constraints-summary").textContent =
+    `${filtered.length} of ${CONSTRAINTS.length} rows — ${CONSTRAINTS.filter(c=>c.enabled).length} enabled overall`;
+
+  $("#constraints-list").innerHTML = filtered.map((c) => {
+    const params = c.parameters && Object.keys(c.parameters).length
+      ? `<div class="params"><em>parameters:</em> <code>${JSON.stringify(c.parameters)}</code></div>` : "";
+    const rules = (c.business_rules || []).length
+      ? `<ul class="rules">${c.business_rules.map((r) => `<li>${r}</li>`).join("")}</ul>` : "";
+    return `<div class="row-card">
+      <div class="head">
+        <span class="id">${c.id}</span>
+        <span class="name">${c.name}</span>
+        ${pill(c.severity, c.severity)}
+        ${pill(c.solver_layer, c.solver_layer)}
+        ${pill(c.enabled ? "on" : "off", c.enabled ? "enabled" : "disabled")}
+        <span class="params" style="margin-left:auto">${c.category} · <code>${c.pattern}</code></span>
+      </div>
+      ${c.description ? `<div class="desc">${c.description}</div>` : ""}
+      ${params}
+      ${rules}
+    </div>`;
+  }).join("") || "<p style='color: var(--text-dim)'>(no rows match)</p>";
+}
+
+async function loadConstraints() {
+  try {
+    CONSTRAINTS = await fetchJSON("/api/constraints");
+    ["cf-search","cf-severity","cf-layer","cf-enabled"].forEach((id) => {
+      $("#" + id).addEventListener("input", renderConstraints);
+    });
+    renderConstraints();
+  } catch (e) {
+    $("#constraints-summary").innerHTML = `<div class="err">failed to load: ${e.message}</div>`;
+  }
+}
+
+async function loadVariables() {
+  try {
+    const rows = await fetchJSON("/api/variables");
+    const tbody = $("#variables-table tbody");
+    tbody.innerHTML = rows.map((v) =>
+      `<tr><td><code>${v.name}</code></td><td>${v.domain}</td><td>${v.index}</td><td>${v.purpose}</td></tr>`
+    ).join("");
+  } catch (e) {
+    $("#variables-table").innerHTML = `<div class="err">failed to load: ${e.message}</div>`;
+  }
+}
+
+let PLAN = null;
+let KPIS = null;
+
+function renderSchedule() {
+  if (!PLAN) return;
+  const q = $("#sf-search").value.toLowerCase();
+  const mach = $("#sf-machine").value;
+  const status = $("#sf-status").value;
+
+  const filtered = PLAN.assignments.filter((a) => {
+    if (status === "filled" && (a.unfilled || 0) > 0 && (a.qty_packed || 0) === 0) return false;
+    if (status === "unfilled" && (a.unfilled || 0) === 0) return false;
+    if (mach && !(a.placements || []).some((p) => p.machine === mach)) return false;
+    if (q) {
+      const blob = `${a.order_id} ${a.customer} ${a.material} ${a.fmt}`.toLowerCase();
+      if (!blob.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const totalDem = filtered.reduce((s, a) => s + (a.qty_demand || 0), 0);
+  const totalPack = filtered.reduce((s, a) => s + (a.qty_packed || 0), 0);
+  const totalUnfilled = filtered.reduce((s, a) => s + (a.unfilled || 0), 0);
+
+  $("#schedule-summary").textContent =
+    `${filtered.length} of ${PLAN.assignments.length} orders · ${PLAN.machines.length} machines · ${PLAN.weeks.length} weeks · source: outputs/${PLAN._source}/`;
+
+  const kpiHtml = [];
+  if (KPIS) {
+    if (KPIS.otif_pct !== undefined) kpiHtml.push(["OTIF %", KPIS.otif_pct.toFixed(1)]);
+    if (KPIS.objective !== undefined && KPIS.objective !== null) kpiHtml.push(["Objective", fmtNum(KPIS.objective)]);
+    if (KPIS.total_idle_h !== undefined) kpiHtml.push(["Idle h", fmtNum(KPIS.total_idle_h)]);
+    if (KPIS.total_changeover_h !== undefined) kpiHtml.push(["Changeover h", fmtNum(KPIS.total_changeover_h)]);
+    if (KPIS.status) kpiHtml.push(["Status", KPIS.status]);
+  }
+  kpiHtml.push(["Demand", fmtNum(totalDem)]);
+  kpiHtml.push(["Packed", fmtNum(totalPack)]);
+  kpiHtml.push(["Unfilled", fmtNum(totalUnfilled)]);
+  $("#schedule-kpis").innerHTML = kpiHtml.map(([l, v]) =>
+    `<div class="kpi"><div class="label">${l}</div><div class="value">${v}</div></div>`
+  ).join("");
+
+  const tbody = $("#schedule-table tbody");
+  tbody.innerHTML = filtered.map((a) => {
+    const placements = (a.placements || []).map((p) =>
+      `<span class="placement"><em>${p.machine}</em> · W${p.week} · ${fmtNum(p.qty)}</span>`
+    ).join("<br>") || "<span class='badge-unfilled'>unfilled</span>";
+    const packedCell = (a.qty_packed || 0) >= (a.qty_demand || 0)
+      ? `<span class="badge-ok">${fmtNum(a.qty_packed)}</span>`
+      : `<span class="badge-unfilled">${fmtNum(a.qty_packed)}</span>`;
+    return `<tr>
+      <td>${a.order_id}${a.is_vip ? " ★" : ""}</td>
+      <td>${a.customer}</td>
+      <td>${a.material}</td>
+      <td>${a.fmt}</td>
+      <td style="text-align:right">${fmtNum(a.qty_demand)}</td>
+      <td style="text-align:right">${packedCell}</td>
+      <td>${placements}</td>
+    </tr>`;
+  }).join("");
+}
+
+async function loadSchedule() {
+  try {
+    PLAN = await fetchJSON("/api/plan");
+    try { KPIS = await fetchJSON("/api/kpis"); } catch { KPIS = null; }
+    const sel = $("#sf-machine");
+    PLAN.machines.forEach((m) => {
+      const o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o);
+    });
+    ["sf-search","sf-machine","sf-status"].forEach((id) => {
+      $("#" + id).addEventListener("input", renderSchedule);
+    });
+    renderSchedule();
+  } catch (e) {
+    $("#schedule-summary").innerHTML = `<div class="err">failed to load plan: ${e.message}. Run <code>demo_scheduler solve --use-catalog</code> first.</div>`;
+  }
+}
+
+loadConstraints();
+loadVariables();
+loadSchedule();
+</script>
+</body>
+</html>
