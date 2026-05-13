@@ -1,0 +1,29 @@
+id: C-004
+req_ref: "auxiliary (vol_pack/x_pack linkage)"
+category: linkage
+name: Volume gated by activation flag
+description: |
+  For every (order, machine, week) cell, the continuous packed volume
+  cannot exceed the order's full demand multiplied by the binary
+  activation flag — turning x_pack into a switch that lets vol_pack
+  rise above zero.
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: bound_linear
+  description: "vol_pack[o,m,w] <= order_qty[o] * x_pack[o,m,w]"
+  index_over: ["order", "machine", "week"]
+
+parameters: {}
+
+units: {}
+
+business_rules: []
+
+owner: Modeling
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-004-history.jsonl"

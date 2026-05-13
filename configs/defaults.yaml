@@ -1,0 +1,94 @@
+# DEMO Pharma Scheduler — default mocked + parameterised inputs.
+#
+# Every value below is either:
+#   (a) sourced from Packaging Ampoules.xlsx and overrideable, or
+#   (b) MOCK — a placeholder until DEMO supplies the real data (see docs/MODEL_SCOPING.md §9).
+#
+# Replace MOCKs by editing this file or by passing --config to the CLI.
+
+horizon:
+  quarter: Q1
+  include_backorder: true        # BO 2024 must clear in Q1
+
+calendar:
+  shifts_per_day: 3
+  days_per_week: 5
+  working_hours_per_shift: 8     # 120 h / wk total
+  holidays: []                   # list of {week: int, hours_lost: int}
+  maintenance_blocks: []         # list of {machine: str, week: int, hours_lost: int}
+
+machines:
+  Marchesini_GL:
+    eligible_formats: ["2ml", "3ml", "5ml", "10ml", "20ml"]
+    container: glass
+  Farcon:
+    eligible_formats: ["2ml", "5ml", "10ml"]
+    container: glass
+  Dividella:
+    eligible_formats: ["2ml", "5ml", "10ml"]
+    container: glass
+  Partena:
+    eligible_formats: ["2ml", "5ml"]
+    container: glass
+
+# MOCK — replace from ProdAction (req #6).
+throughput_units_per_hour:
+  Marchesini_GL: { "2ml": 18000, "3ml": 16000, "5ml": 14000, "10ml": 10000, "20ml": 7000 }
+  Farcon:        { "2ml": 12000, "5ml": 10000, "10ml": 7000 }
+  Dividella:     { "2ml": 12000, "5ml": 10000, "10ml": 7000 }
+  Partena:       { "2ml": 8000,  "5ml": 6000 }
+
+# MOCK — replace from format-changeover-time matrices per packaging line (gap #1).
+# Hours required to switch from format f1 to f2 on a given machine.
+changeover_hours:
+  default:
+    same_format: 0
+    minor_volume_change: 2       # neighbouring volume on the volume ladder
+    major_volume_change: 6       # non-neighbouring volume
+    container_change: 12         # glass <-> plastic (not used in Q1 glass-only)
+  per_machine_overrides: {}      # e.g. Marchesini_GL: { minor_volume_change: 1 }
+
+# Customer-specific monthly volume bands (req #37 etc.).
+bands:
+  Piramal: { monthly_min: 1800000, monthly_max: 2000000 }
+  # OPEN: data shows 2.0–2.8M/mo for Piramal — see docs/MODEL_SCOPING.md §10.
+
+lags:
+  prod_to_pack_min_days: 4       # req #46
+  prod_to_label_min_days: 3      # req #46
+
+production:
+  shelf_life_months_default: 24
+  shelf_life_months_long: 36
+  long_sl_skus: []               # populate when BoM is available
+  campaign_coverage_months_24mo: 6   # req #45
+  campaign_coverage_months_36mo: 9   # req #45
+  scrap_rate_default: 0.02       # req #47
+  evaton_min_gap_weeks: 3        # req #49
+  evaton_skus: []                # populate from BoM (currently no EVATON SKU bound)
+
+orgs_no_split: ["Unicef", "Imres", "ICRC", "IDA", "MSF"]   # req #39
+
+# MOCK — glass-machine volume eligibility (req #31, #32).
+# Left empty for v1 (thresholds in docs/MODEL_SCOPING.md are placeholder).
+# Eligibility is therefore decided by format only; populate when real volume
+# rules are sourced from DEMO.
+glass_volume_thresholds: {}
+
+objective_weights:               # req #1, #10 — fully tunable
+  fulfilment: 1.00
+  changeover: 0.10
+  idle:       0.00              # zero — idle penalty perversely rewards
+                                # using slow machines (which absorb more hours);
+                                # capacity pressure is already in `unfilled`.
+  tie_split:  0.20
+  late:       0.50
+
+rating:
+  vip_multiplier: 10000
+  delay_step: 1
+
+solver:
+  time_limit_seconds: 600        # 10 min on full Q1 reaches ~95% OTIF;
+                                 # 2 min lands ~25% OTIF (incumbent only).
+  mip_gap: 0.01                  # accept 1% optimality gap

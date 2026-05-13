@@ -1,0 +1,30 @@
+id: C-011
+req_ref: "req #42"
+category: production
+name: One API per production week
+description: |
+  Originally: a production line may run only one API in a given week.
+  Disabled in v1 because there's no production-line dimension in the
+  current data (Excel groups by material only) and 145 materials over
+  13 weeks would force >145/13 lines, which we don't model. Will be
+  re-enabled when ProdAction data introduces per-line allocation.
+
+severity: hard
+solver_layer: MILP_master
+enabled: false
+
+formal_expr:
+  type: disabled
+  description: "tracked for completeness; compiler is a no-op"
+
+parameters: {}
+
+units: {}
+
+business_rules:
+  - "Re-enabling requires per-line throughput inputs (req #6)."
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-011-history.jsonl"

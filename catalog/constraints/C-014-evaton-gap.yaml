@@ -1,0 +1,33 @@
+id: C-014
+req_ref: "req #49"
+category: production
+name: EVATON 2-batch, 3-week gap
+description: |
+  EVATON-supplied SKUs may not be produced within `min_gap_weeks` of
+  each other. Vacuous in v1 because `evaton_skus` is empty pending the
+  BoM data. Encoded as a CP-SAT forbidden-assignments constraint so
+  the rule lights up automatically once SKUs are bound.
+
+severity: hard
+solver_layer: CP_SAT_seq
+enabled: false
+
+formal_expr:
+  type: forbidden_assignments
+  description: "min |pw_a - pw_b| >= min_gap_weeks for SKUs in evaton_skus"
+  index_over: ["material", "week"]
+
+parameters:
+  min_gap_weeks: 3
+  evaton_skus: []
+
+units:
+  min_gap_weeks: weeks
+
+business_rules:
+  - "Gap is enforced for batches sharing the same EVATON supplier slot."
+
+owner: Supply
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-014-history.jsonl"

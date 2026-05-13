@@ -1,0 +1,29 @@
+id: C-008a
+req_ref: "req #36 (linearisation half)"
+category: sequencing
+name: Changeover indicator linkage
+description: |
+  Per-machine, count a format change exactly when two consecutive
+  weeks have different active formats. The continuous indicator
+  co_pack[m,f1,f2,w] is forced ≥ 1 when y_pack[m,f1,w-1] and
+  y_pack[m,f2,w] are both 1.
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: indicator_link
+  description: "co_pack[m,f1,f2,w] >= y_pack[m,f1,w-1] + y_pack[m,f2,w] - 1"
+  index_over: ["machine", "format_from", "format_to", "week"]
+
+parameters: {}
+
+units: {}
+
+business_rules: []
+
+owner: Modeling
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-008a-history.jsonl"

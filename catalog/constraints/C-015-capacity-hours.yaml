@@ -1,0 +1,33 @@
+id: C-015
+req_ref: "req #5, #19"
+category: capacity
+name: Machine-week capacity (hours)
+description: |
+  For every (machine, week), packing hours plus changeover hours plus
+  idle hours equals the shift-calendar availability for that cell.
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: capacity_eq
+  description: |
+    sum_o vol_pack[o,m,w] / throughput[m,fmt(o)]
+      + sum_{f1,f2} co_pack[m,f1,f2,w] * changeover_h[m,f1,f2]
+      + idle_hours[m,w]
+      == avail_hours[m,w]
+  index_over: ["machine", "week"]
+
+parameters: {}
+
+units:
+  rhs: hours_per_week
+
+business_rules:
+  - "Every minute is accounted for: pack + changeover + idle = avail."
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-015-history.jsonl"

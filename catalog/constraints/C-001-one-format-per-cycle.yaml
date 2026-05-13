@@ -1,0 +1,32 @@
+id: C-001
+req_ref: "req #8"
+category: sequencing
+name: One format per packaging cycle
+description: |
+  At most one format may be active on a given (machine, week) cycle.
+  Changeovers between formats are encoded separately (C-008).
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: sum_le
+  description: "sum_f y_pack[m, f, w] <= 1 for all (m, w)"
+  index_over: ["machine", "week"]
+  sum_over: "format"
+  variable: y_pack
+  rhs: 1
+
+parameters: {}
+
+units:
+  rhs: count
+
+business_rules:
+  - "Production cannot run mixed-format cycles within a week."
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-001-history.jsonl"

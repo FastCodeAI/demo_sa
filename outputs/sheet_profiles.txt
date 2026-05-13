@@ -1,0 +1,95 @@
+=== BO & FC 2025 === shape=(1825, 38)
+                              0                1             2                              3                  4                  5   ...        32       33            34        35                             36        37
+0         Country\nΧώρα έγκρισης  Material Number  Αντιστοίχηση       SAP Material Description  1st Rating Factor  2nd Rating Factor  ...  Point Q3  Q4 2025  Pack slot Q4  Point Q4  Total Quantity for packagi...  comments
+1  Pan American Health Organi...          1052815      11000568  DEXAMETHAS PHOS 4MG/ML GLA...                  B                  D  ...       NaN      NaN           NaN       303                         125000       NaN
+2                 FrostPharma AB          0950110      11000670  ADRENALINE 1MG GLAMPX10 1M...                  A                  A  ...       404      NaN           NaN       NaN                         110000       NaN
+3                         Unicef          0950113      11000672  ADRENALINE 1MG GLAMPX10 1M...                  A                  B  ...       NaN      NaN           NaN       NaN                         110000       NaN
+4                         Unicef          0950113      11000672  ADRENALINE 1MG GLAMPX10 1M...                  A                  B  ...       404      NaN           NaN       NaN                         110000       NaN
+
+=== Marchesini === shape=(48, 7)
+                0                    1                    2                    3                    4                    5    6
+0  packaging line        Marchesini GL                  NaN                  NaN                  NaN                  NaN  NaN
+1             NaN                  NaN                  NaN                  NaN                  NaN                  NaN  NaN
+2      Row Labels  Sum of Pack slot ΒΟ  Sum of Pack slot Q1  Sum of Pack slot Q2  Sum of Pack slot Q3  Sum of Pack slot Q4  NaN
+3          0002ml                   52                   95                   95                   64                   86  NaN
+4            DEMO                   40                   38                   48                   42                   40  NaN
+
+=== FARCON-DIVIDELLA === shape=(66, 7)
+                0                    1                    2                    3                    4                    5    6
+0             NaN                  NaN                  NaN                  NaN                  NaN                  NaN  NaN
+1  packaging line     (Multiple Items)                  NaN                  NaN                  NaN                  NaN  NaN
+2             NaN                  NaN                  NaN                  NaN                  NaN                  NaN  NaN
+3      Row Labels  Sum of Pack slot ΒΟ  Sum of Pack slot Q1  Sum of Pack slot Q4  Sum of Pack slot Q3  Sum of Pack slot Q2  NaN
+4          0002ml                   19                   53                   75                   74                   62  NaN
+
+=== Partena === shape=(13, 6)
+                0                    1                    2                    3                    4                    5
+0             NaN                  NaN                  NaN                  NaN                  NaN                  NaN
+1  packaging line              Partena                  NaN                  NaN                  NaN                  NaN
+2             NaN                  NaN                  NaN                  NaN                  NaN                  NaN
+3      Row Labels  Sum of Pack slot ΒΟ  Sum of Pack slot Q1  Sum of Pack slot Q2  Sum of Pack slot Q3  Sum of Pack slot Q4
+4          0003ml                  NaN                   34                  NaN                   41                   42
+
+=== Ranking === shape=(74, 9)
+                      0                        1          2                 3                  4                  5   6    7    8
+0         Customer Name  Customer Classification    Country         CONTINENT  1st Rating Factor  2nd Rating Factor NaN  NaN  NaN
+1        DEMOGEN France                      ISD     FRANCE            Europe                  A                  A NaN  NaN  NaN
+2               GERMANY                      ISD    GERMANY            Europe                  A                  A NaN  NaN  NaN
+3  Inter Pharma Pty Ltd                      ISD  AUSTRALIA  CE&SE Asia/Oc/Am                  A                  A NaN  NaN  NaN
+4        United Kingdom                      ISD         UK            Europe                  A                  A NaN  NaN  NaN
+
+=== Ranking ISD === shape=(193, 12)
+   0   1           2              3                              4                        5         6                7                   8   9                  10                    11
+0 NaN NaN   Mode Line  Καταχωρισμένο            Καταχωρισμένο υλικό                 Σκεύασμα   Pr.Qnt.  Rank Net Profit  Net Profit Grouped NaN  Rank Net Profit %  Net Profit % Grouped
+1 NaN NaN  Glass amps        1053510  1053510            VITAMIN...  VITAMINS B+C 5ML x(6+6)   2615592                1                   A NaN                  2                     A
+2 NaN NaN  Glass amps        1050713  1050713            CARTAN ...  LEVOCARNITINE 1G 5ML x5   2428545                2                   A NaN                 42                     B
+3 NaN NaN  Glass amps        1050710  1050710            CARTAN ...  LEVOCARNITINE 1G 5ML x5   1683105                3                   A NaN                 43                     B
+4 NaN NaN  Glass amps        0950110  0950110            ADRENAL...       ADRENALINE 1MG 1ML    338940                4                   A NaN                  6                     A
+
+=== Ranking GR === shape=(114, 12)
+   0   1          2                        3    4    5   6    7    8   9    10   11
+0 NaN NaN        NaN                      NaN  NaN  NaN NaN  NaN  NaN NaN  NaN  NaN
+1 NaN NaN     Period  01.01.2024 - 31.12.2024  NaN  NaN NaN  NaN  NaN NaN  NaN  NaN
+2 NaN NaN  Mode Line               Glass Amps  NaN  NaN NaN  NaN  NaN NaN  NaN  NaN
+3 NaN NaN       Area                       GR  NaN  NaN NaN  NaN  NaN NaN  NaN  NaN
+4 NaN NaN        NaN                      NaN  NaN  NaN NaN  NaN  NaN NaN  NaN  NaN
+
+=== ISD Forecast Totals 2025 === shape=(12, 2)
+                  0                           1
+0        Row Labels  Sum of Total Quantity 2025
+1  Plastic Ampoules                   233766810
+2    Glass Ampoules                    47644693
+3   Plastic Bottles                    28780550
+4      Lyophillized                    10164175
+
+=== ISD OPEN ORDERS 2025 === shape=(448, 41)
+                   0                     1              2                   3                    4           5   ...                 35         36                  37               38                 39                 40
+0  Sales Organization  Distribution Channel  Sold-to party                Name  Purchase order date  Pur. order  ...  Document Currency  Net value  Invoice Commission  Invoice Freight  Document Currency  Confirmation Date
+1                1000                    20     3001000537      Fannin Limited  2024-09-18 00:00:00  4510097516  ...                EUR          0                   0                0                NaN                NaN
+2                1000                    20     3001000581  hameln pharma gmbh  2024-09-17 00:00:00  4500006961  ...                EUR          0                   0                0                NaN                NaN
+3                1000                    20     3001000581  hameln pharma gmbh  2024-09-17 00:00:00  4500006962  ...                EUR          0                   0                0                NaN                NaN
+4                1000                    20     3001000581  hameln pharma gmbh  2024-09-17 00:00:00  4500006962  ...                EUR          0                   0                0                NaN                NaN
+
+=== UPLOAD UNIT === shape=(910, 14)
+                              0                1        2        3        4        5   ...          8    9               10              11              12              13
+0       SAP Material Description  Material Number  Q1 2025  Q2 2025  Q3 2025  Q4 2025  ...  MULTIPLIER  2.0  Q1 2025 UPLOAD  Q2 2025 UPLOAD  Q3 2025 UPLOAD  Q4 2025 UPLOAD
+1  AMINOPHYLLINE 250MG PPAMP ...          0100116      NaN      NaN    20000      NaN  ...          10  NaN               0               0            2000               0
+2  AMINOPHYLLINE 250MG PPAMP ...          0100120      NaN      NaN    20000    60000  ...          10  NaN               0               0            2000            6000
+3  AMINOPHYL 250MG PPAMP X10 ...          0100123      NaN      NaN    20000      NaN  ...          10  NaN               0               0            2000               0
+4  AMINOPHYLLINE 250MG PPAMPX...          0100128      NaN    30000      NaN    30000  ...           1  NaN               0           30000               0           30000
+
+=== ITEM DESCR === shape=(787, 4)
+          0                              1          2               3
+0  Material                    Description  Base Unit  X-plant status
+1   0100116  AMINOPHYLLINE 250MG PPAMP ...        BOX             NaN
+2   0100120  AMINOPHYLLINE 250MG PPAMP ...        BOX             NaN
+3   0100123  AMINOPHYL 250MG PPAMP X10 ...        BOX             NaN
+4   0100128  AMINOPHYLLINE 250MG PPAMPX...        AMP             NaN
+
+=== PIVOT === shape=(791, 5)
+            0                      1                      2                      3                      4
+0         NaN                    NaN                    NaN                    NaN                    NaN
+1         NaN                    NaN                    NaN                    NaN                    NaN
+2  Row Labels  Sum of Q1 2025 UPLOAD  Sum of Q2 2025 UPLOAD  Sum of Q3 2025 UPLOAD  Sum of Q4 2025 UPLOAD
+3     0100116                      0                      0                   2000                      0
+4     0100120                      0                      0                   2000                   6000

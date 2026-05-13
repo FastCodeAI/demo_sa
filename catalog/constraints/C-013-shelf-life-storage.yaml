@@ -1,0 +1,35 @@
+id: C-013
+req_ref: "req #48"
+category: shelf_life
+name: Shelf-life storage cap
+description: |
+  No packed batch may age past its shelf-life. Vacuous in the 13-week
+  MILP horizon when the default shelf life is 24+ months; encoded as a
+  CP-SAT time-window constraint that will bite only on long horizons or
+  short-SL SKUs. Phase-2c can flip `enabled` on per-material rules.
+
+severity: hard
+solver_layer: CP_SAT_seq
+enabled: false
+
+formal_expr:
+  type: time_window
+  description: |
+    For each packed batch, pack_week - production_week <= shelf_life_weeks[s]
+  index_over: ["material"]
+
+parameters:
+  default_shelf_life_months: 24
+  long_shelf_life_months: 36
+
+units:
+  default_shelf_life_months: months
+  long_shelf_life_months: months
+
+business_rules:
+  - "Long-SL SKUs need a separate per-material override row."
+
+owner: QA
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-013-history.jsonl"

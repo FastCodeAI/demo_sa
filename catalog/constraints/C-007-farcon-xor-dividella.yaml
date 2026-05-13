@@ -1,0 +1,31 @@
+id: C-007
+req_ref: "req #35"
+category: resource_sharing
+name: Farcon XOR Dividella
+description: |
+  Farcon and Dividella share an operator team and cannot both run in the
+  same week. Modelled as a weekly mutex on the union of their y_pack
+  format indicators.
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: mutex
+  description: "sum_f y_pack[Farcon,f,w] + sum_f y_pack[Dividella,f,w] <= 1"
+  index_over: ["week"]
+  machines: ["Farcon", "Dividella"]
+  variable: y_pack
+
+parameters: {}
+
+units: {}
+
+business_rules:
+  - "Operator team is licensed for one of these lines per week, not both."
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-007-history.jsonl"

@@ -1,0 +1,37 @@
+id: C-008b
+req_ref: "req #36 (loose envelope)"
+category: resource_sharing
+name: Changeover-team weekly hour cap
+description: |
+  The shared changeover-team operator can perform at most
+  team_hours_per_week of total changeover work in a given week, summed
+  across all machines. This is the loose envelope that lets the MILP
+  produce sequenceable assignments; the tight minute-level no-overlap
+  on the team is enforced by Tier-3 CP-SAT (catalog C-008).
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: weighted_sum_le
+  description: |
+    sum_{m,f1,f2} co_pack[m,f1,f2,w] * changeover_h[m,f1,f2] <= team_hours_per_week
+  index_over: ["week"]
+  variable: co_pack
+  weights: changeover_h
+  cap_param: team_hours_per_week
+
+parameters:
+  team_hours_per_week: 120
+
+units:
+  team_hours_per_week: hours_per_week
+
+business_rules:
+  - "Raising team_hours_per_week beyond 120 implies a second shift — requires Production Planning sign-off."
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-008b-history.jsonl"

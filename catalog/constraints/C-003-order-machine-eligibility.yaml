@@ -1,0 +1,29 @@
+id: C-003
+req_ref: "implicit, derived from machine eligible_formats + format(o)"
+category: eligibility
+name: Order-machine eligibility (sparse linkage)
+description: |
+  An order may only be placed on a machine whose active format matches
+  the order's format and whose volume thresholds (where defined)
+  permit the order quantity. Enforced as x_pack[o,m,w] <= y_pack[m, fmt(o), w].
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: sparse_set
+  description: "x_pack[o, m, w] <= y_pack[m, format(o), w] for (o,m,w) in OMW"
+  index_over: ["order", "machine", "week"]
+
+parameters: {}
+
+units: {}
+
+business_rules:
+  - "Eligibility is decided by format compatibility (and optional volume thresholds)."
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-003-history.jsonl"

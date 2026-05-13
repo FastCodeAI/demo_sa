@@ -1,0 +1,32 @@
+id: C-002
+req_ref: "req #2, #10"
+category: balance
+name: Demand fulfilment balance
+description: |
+  For every order, packed volume across all eligible (machine, week)
+  cells plus the unfilled slack equals the demanded quantity.
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: balance
+  description: |
+    sum_{(m,w) in elig(o)} vol_pack[o, m, w] + unfilled[o] == order_qty[o]
+  index_over: ["order"]
+  packed_var: vol_pack
+  slack_var: unfilled
+  scope: "eligible"
+
+parameters: {}
+
+units: {}
+
+business_rules:
+  - "Total committed volume must reconcile against demand; the gap is the unfilled backlog."
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-002-history.jsonl"

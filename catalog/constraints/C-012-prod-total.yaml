@@ -1,0 +1,30 @@
+id: C-012
+req_ref: "req #45 (loose form), req #47 (scrap)"
+category: production
+name: Campaign coverage / production total
+description: |
+  Total production over the horizon for each material, net of the
+  scrap factor, must cover the total packed volume for that material.
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: aggregated_balance
+  description: |
+    sum_w qty_prod[s, w] * (1 - scrap_rate[s]) >= sum_{o, m, w} vol_pack[o, m, w] where material(o) == s
+  index_over: ["material"]
+  scrap_param: scrap_rate
+
+parameters: {}
+
+units: {}
+
+business_rules:
+  - "Scrap rate is a planning placeholder; replace with batch-yield data when available."
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-012-history.jsonl"

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "demo-scheduler"
+version = "0.1.0"
+description = "DEMO Pharma production + packaging scheduler — Q1 2025 two-stage MILP."
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "openpyxl>=3.1",
+    "matplotlib>=3.8",
+    "pyomo>=6.7",
+    "highspy>=1.7",
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+    "click>=8.1",
+    "ortools>=9.10",
+    "anthropic>=0.40",
+    "openai>=1.50",
+    "langgraph>=0.2",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+demo_scheduler = "demo_scheduler.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["demo_scheduler*"]
+exclude = ["outputs*", "docs*", "configs*", "tests*"]

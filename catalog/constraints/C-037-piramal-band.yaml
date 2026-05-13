@@ -1,0 +1,46 @@
+id: C-037
+req_ref: "req #37"
+category: customer_band
+name: Piramal monthly volume band
+description: |
+  Piramal must receive between `monthly_min` and `monthly_max` ampoules
+  per calendar month. Encoded as a two-sided bound; under/over slacks
+  are penalised in the objective at the `late` weight.
+  Open question per docs/MODEL_SCOPING.md §10: 2025 data shows
+  2.0–2.8M/month while the contracted band is 1.8–2.0M.
+
+severity: soft
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: two_sided_bound
+  description: |
+    monthly_min - under[t] <= sum_{o in Piramal, m in elig(o), w in month(t)} vol_pack[o, m, w] <= monthly_max + over[t]
+  index_over: ["month"]
+  sum_over: ["order:piramal", "machine:eligible", "week:in_month"]
+  variable: vol_pack
+  bound_min: parameters.monthly_min
+  bound_max: parameters.monthly_max
+
+parameters:
+  monthly_min: 1800000
+  monthly_max: 2000000
+
+soft_handling:
+  under_var: piramal_under
+  over_var: piramal_over
+  penalty_weight: objective_weights.late
+
+units:
+  monthly_min: ampoules_per_month
+  monthly_max: ampoules_per_month
+
+business_rules:
+  - "Any change to monthly_max above 2.5M requires Sales-VP approval."
+  - "monthly_min cannot drop below 1.5M while supply contract X-2024 is active."
+
+owner: Sales/Account Mgr
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-037-history.jsonl"

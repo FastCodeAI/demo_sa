@@ -1,0 +1,36 @@
+id: C-009
+req_ref: "req #46 (production -> packaging)"
+category: precedence
+name: Production-to-pack cumulative lag
+description: |
+  Per material, the cumulative production through week (w - lag) must
+  cover the cumulative packing through week w. Encoded on cumulative
+  totals because the 13-week MILP horizon doesn't carry per-batch
+  identity (batch tracking is a Phase-3 concern).
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: cumulative_lag
+  description: |
+    sum_{pw <= w - lag} qty_prod[s, pw] >= sum_{pw <= w} sum_{o, m: material(o)==s} vol_pack[o, m, pw]
+  index_over: ["material", "week"]
+
+parameters:
+  lag_weeks: 1
+  source_days: 4
+
+units:
+  lag_weeks: weeks
+  source_days: days
+
+business_rules:
+  - "Source value is 4 calendar days (req #46) — converts to 1 working week."
+  - "Reducing lag to 0 implies day-of-production packing — requires QA waiver."
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-009-history.jsonl"

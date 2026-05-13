@@ -1,0 +1,30 @@
+id: C-008
+req_ref: "req #36 (tight, minute-level)"
+category: sequencing
+name: Changeover-team minute-level no-overlap (CP-SAT)
+description: |
+  The shared changeover-team operator works one machine at a time.
+  Tier-3 CP-SAT enforces this via `add_no_overlap` on the transition
+  intervals across all machines within each week. Tier-2 keeps a loose
+  hours-based envelope (catalog C-008b).
+
+severity: hard
+solver_layer: CP_SAT_seq
+enabled: true
+
+formal_expr:
+  type: resource_no_overlap
+  description: "no_overlap(transition_intervals_global)"
+  resource: changeover_team
+  index_over: ["week"]
+
+parameters: {}
+
+units: {}
+
+business_rules: []
+
+owner: Production Planning
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-008-history.jsonl"

@@ -1,0 +1,31 @@
+id: C-005
+req_ref: "req #39"
+category: customer_handling
+name: Org orders not split
+description: |
+  Orders for the listed humanitarian/org customers must ship from a
+  single (machine, week) cell — no partial shipments. Implemented as
+  `sum_{m,w} x_pack[o,m,w] == 1` for o in orgs_no_split.
+
+severity: hard
+solver_layer: MILP_master
+enabled: true
+
+formal_expr:
+  type: single_placement
+  description: "sum_{m,w} x_pack[o,m,w] == 1 for o in orgs_no_split"
+  index_over: ["order:orgs_no_split"]
+  variable: x_pack
+
+parameters:
+  org_customers: ["Unicef", "Imres", "ICRC", "IDA", "MSF"]
+
+units: {}
+
+business_rules:
+  - "Humanitarian orgs require single-batch traceability — no partials."
+
+owner: Compliance
+version: "2026-05-12.v1"
+verifier_state: unverified
+audit_log_ref: "catalog/audit/C-005-history.jsonl"
