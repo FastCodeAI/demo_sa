@@ -79,6 +79,63 @@
     .badge-ok { color: var(--ok); }
     .placement { font-family: ui-monospace, monospace; font-size: 12px; color: var(--text-dim); }
     .placement em { color: var(--text); font-style: normal; }
+    .chat-area { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 14px; }
+    .chat-area textarea {
+      width: 100%; background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 4px; padding: 10px; font-family: inherit; font-size: 14px; resize: vertical;
+    }
+    .chat-controls { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+    .chat-controls select, .chat-controls label {
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 4px;
+      padding: 6px 10px; font-size: 13px; font-family: inherit;
+    }
+    .chat-controls label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .btn-primary {
+      background: var(--accent); color: #0b1219; border: 0; padding: 7px 16px; border-radius: 4px;
+      font-weight: 600; font-size: 13px; font-family: inherit; cursor: pointer;
+    }
+    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      background: transparent; color: var(--text); border: 1px solid var(--border); padding: 6px 14px;
+      border-radius: 4px; font-size: 13px; font-family: inherit; cursor: pointer; margin-left: 8px;
+    }
+    .btn-secondary:hover { background: var(--panel-2); }
+    .btn-danger { background: rgba(255,122,122,0.15); color: var(--hard); }
+    .response-area {
+      margin-top: 16px; background: var(--panel); border: 1px solid var(--border);
+      border-radius: 4px; padding: 14px;
+    }
+    .response-area h3 { font-size: 13px; margin: 0 0 8px 0; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+    .check { display: flex; gap: 8px; align-items: baseline; font-size: 13px; padding: 3px 0; }
+    .check .mark-ok { color: var(--ok); font-weight: 600; }
+    .check .mark-fail { color: var(--hard); font-weight: 600; }
+    .check .check-name { color: var(--text); min-width: 130px; }
+    .check .check-detail { color: var(--text-dim); }
+    .gate { color: var(--soft); font-size: 13px; padding: 2px 0; }
+    .patch-diff {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px;
+      padding: 10px 12px; font-family: ui-monospace, monospace; font-size: 12px; margin: 8px 0;
+      white-space: pre-wrap;
+    }
+    .solve-bar {
+      margin-top: 28px; padding: 14px; background: var(--panel); border: 1px solid var(--border);
+      border-radius: 4px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .solve-bar > div { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .solve-bar label { background: var(--panel-2); padding: 6px 10px; border-radius: 4px; font-size: 13px; }
+    .progress {
+      height: 4px; background: var(--panel-2); border-radius: 2px; overflow: hidden; margin: 6px 0;
+    }
+    .progress-bar { height: 100%; background: var(--accent); width: 30%; animation: indet 1.4s ease-in-out infinite; }
+    @keyframes indet {
+      0%  { margin-left: -30%; }
+      100% { margin-left: 100%; }
+    }
+    .phase { color: var(--text-dim); font-size: 12px; font-family: ui-monospace, monospace; }
+    .toast { padding: 10px 12px; border-radius: 4px; margin-top: 8px; font-size: 13px; }
+    .toast-ok { background: rgba(94,220,143,0.12); color: var(--ok); border: 1px solid rgba(94,220,143,0.3); }
+    .toast-fail { background: rgba(255,122,122,0.10); color: var(--hard); border: 1px solid rgba(255,122,122,0.3); }
   </style>
 </head>
 <body>
@@ -87,12 +144,56 @@
     <span class="sub">Phase 2 viewer · catalog + variables + latest plan</span>
   </header>
   <nav>
-    <button data-tab="constraints" class="active">Constraints</button>
+    <button data-tab="agent" class="active">Agent</button>
+    <button data-tab="constraints">Constraints</button>
     <button data-tab="variables">Variables</button>
     <button data-tab="schedule">Schedule</button>
   </nav>
   <main>
-    <section id="constraints" class="active">
+    <section id="agent" class="active">
+      <h2>Talk to the Supervisor agent</h2>
+      <div class="summary">
+        Describe a constraint change in plain English. The Supervisor routes to Constraint-Elicitation,
+        the Verifier runs schema + unit + business-rule checks, and only patches that clear all checks
+        (and have no pending approval gates) are eligible to apply. Re-solving then rebuilds the plan
+        with the new catalog — typically 5–10 minutes.
+      </div>
+
+      <div class="chat-area">
+        <textarea id="chat-input" rows="3" placeholder="e.g. raise Piramal monthly band to 2.5M; loosen prod-to-pack lag to 3 days; disable C-013 for now"></textarea>
+        <div class="chat-controls">
+          <label><input type="checkbox" id="chat-mock" /> mock LLM</label>
+          <select id="chat-llm">
+            <option value="auto">auto (prefer OpenAI)</option>
+            <option value="openai">openai</option>
+            <option value="anthropic">anthropic</option>
+          </select>
+          <select id="chat-persona">
+            <option value="">no persona</option>
+            <option value="sales">sales</option>
+            <option value="production">production</option>
+            <option value="compliance">compliance</option>
+          </select>
+          <button id="chat-send" class="btn-primary">Send</button>
+        </div>
+      </div>
+
+      <div id="chat-response" class="response-area"></div>
+
+      <div class="solve-bar">
+        <div>
+          <strong>Re-solve</strong>
+          <span class="summary">After applying a patch, re-run the MILP + CP-SAT pipeline.</span>
+        </div>
+        <div>
+          <label><input type="checkbox" id="solve-use-catalog" checked /> use catalog</label>
+          <button id="solve-start" class="btn-primary">Run solver</button>
+        </div>
+      </div>
+      <div id="solve-status" class="response-area" style="display:none"></div>
+    </section>
+
+    <section id="constraints">
       <h2>Constraint catalog</h2>
       <div class="summary" id="constraints-summary">loading…</div>
       <div class="filter-bar">
@@ -310,6 +411,199 @@ async function loadSchedule() {
     $("#schedule-summary").innerHTML = `<div class="err">failed to load plan: ${e.message}. Run <code>demo_scheduler solve --use-catalog</code> first.</div>`;
   }
 }
+
+// ---------- agent / solve ----------
+
+let LAST_PATCH = null;
+
+function renderVerify(v) {
+  if (!v) return "";
+  const outcomes = (v.outcomes || []).map((o) =>
+    `<div class="check">
+      <span class="${o.passed ? 'mark-ok' : 'mark-fail'}">${o.passed ? '✓' : '✗'}</span>
+      <span class="check-name">${o.name}</span>
+      <span class="check-detail">${o.detail || ''}</span>
+    </div>`
+  ).join("");
+  const gates = (v.approval_gates || []).length
+    ? `<h3 style="margin-top:12px">Approval gates</h3>` +
+      v.approval_gates.map((g) => `<div class="gate">⚠ ${g}</div>`).join("")
+    : "";
+  return `<h3>Verifier checks</h3>${outcomes}${gates}`;
+}
+
+function renderChatResponse(resp) {
+  const el = $("#chat-response");
+  if (resp.error) {
+    el.innerHTML = `<div class="toast toast-fail">elicitation error: ${resp.error}</div>`;
+    return;
+  }
+  const lines = [`<h3>Intent</h3><div>${resp.intent} · <span class="phase">${resp.llm || ''}</span></div>`];
+
+  if (resp.patch) {
+    LAST_PATCH = resp.patch;
+    const changes = Object.entries(resp.patch.parameter_changes || {})
+      .map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`).join("\n");
+    lines.push(`<h3 style="margin-top:14px">Patch — ${resp.patch.id} → version ${resp.patch.version_to}</h3>`);
+    lines.push(`<div class="patch-diff">${changes || '(no changes)'}</div>`);
+    if (resp.patch.rationale) {
+      lines.push(`<div class="summary" style="margin: 4px 0 8px 0">rationale: ${resp.patch.rationale}</div>`);
+    }
+    lines.push(renderVerify(resp.verify));
+    const canApply = resp.verify && resp.verify.passed && !resp.verify.needs_approval;
+    lines.push(`<div style="margin-top:14px">
+      <button id="apply-patch" class="btn-primary" ${canApply ? '' : 'disabled'}>Apply patch</button>
+      <button id="reject-patch" class="btn-secondary btn-danger">Reject</button>
+      ${!canApply && resp.verify ? `<span class="summary" style="margin-left:10px">${resp.verify.needs_approval ? 'approval gate' : 'verifier failed'} — cannot apply directly</span>` : ''}
+    </div>`);
+  } else if (resp.text) {
+    lines.push(`<div style="margin-top:8px; white-space: pre-wrap">${resp.text}</div>`);
+  } else if (resp.payload) {
+    lines.push(`<div class="patch-diff">${JSON.stringify(resp.payload, null, 2)}</div>`);
+  }
+
+  el.innerHTML = lines.join("");
+
+  const ap = $("#apply-patch");
+  if (ap) ap.addEventListener("click", applyPatch);
+  const rj = $("#reject-patch");
+  if (rj) rj.addEventListener("click", () => {
+    LAST_PATCH = null;
+    el.innerHTML += `<div class="toast">patch rejected; no changes written</div>`;
+  });
+}
+
+async function sendChat() {
+  const msg = $("#chat-input").value.trim();
+  if (!msg) return;
+  const btn = $("#chat-send");
+  btn.disabled = true; btn.textContent = "Thinking…";
+  $("#chat-response").innerHTML = `<div class="phase">routing intent → calling agent → running Verifier…</div><div class="progress"><div class="progress-bar"></div></div>`;
+  try {
+    const r = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        message: msg,
+        use_mock: $("#chat-mock").checked,
+        llm_backend: $("#chat-llm").value,
+        persona: $("#chat-persona").value || null,
+      }),
+    });
+    const body = await r.json();
+    if (!r.ok) {
+      $("#chat-response").innerHTML = `<div class="toast toast-fail">${body.detail || r.statusText}</div>`;
+    } else {
+      renderChatResponse(body);
+    }
+  } catch (e) {
+    $("#chat-response").innerHTML = `<div class="toast toast-fail">${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = "Send";
+  }
+}
+
+async function applyPatch() {
+  if (!LAST_PATCH) return;
+  const btn = $("#apply-patch");
+  btn.disabled = true; btn.textContent = "Applying…";
+  try {
+    const r = await fetch("/api/apply", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: LAST_PATCH.id,
+        parameter_changes: LAST_PATCH.parameter_changes,
+        version_to: LAST_PATCH.version_to,
+        rationale: LAST_PATCH.rationale || "",
+        actor: "web_ui",
+      }),
+    });
+    const body = await r.json();
+    const el = $("#chat-response");
+    if (body.applied) {
+      el.innerHTML += `<div class="toast toast-ok">✓ Patch written to ${body.file}. Catalog reloaded.</div>`;
+      await loadConstraints();
+    } else {
+      el.innerHTML += `<div class="toast toast-fail">Not applied: ${body.reason || r.statusText}</div>`;
+    }
+  } catch (e) {
+    $("#chat-response").innerHTML += `<div class="toast toast-fail">${e.message}</div>`;
+  }
+}
+
+let SOLVE_POLL = null;
+
+function renderSolveStatus(job) {
+  const el = $("#solve-status");
+  el.style.display = "block";
+  const elapsed = job.elapsed_s !== undefined ? ` · ${job.elapsed_s.toFixed(0)}s` : "";
+  let body = `<h3>Solve ${job.id}</h3>
+    <div>status: <strong>${job.status}</strong><span class="phase"> · phase: ${job.phase}${elapsed}</span></div>`;
+  if (job.status === "running" || job.status === "pending") {
+    body += `<div class="progress"><div class="progress-bar"></div></div>`;
+  }
+  if (job.kpis) {
+    body += `<h3 style="margin-top:12px">KPIs</h3>`;
+    body += `<div class="patch-diff">${JSON.stringify(job.kpis, null, 2)}</div>`;
+  }
+  if (job.error) {
+    body += `<div class="toast toast-fail">${job.error}</div>`;
+  }
+  if (job.status === "done") {
+    body += `<div class="toast toast-ok">Plan written to outputs/${job.output_dir}. Schedule tab refreshed.</div>`;
+  }
+  el.innerHTML = body;
+}
+
+async function pollSolve(jobId) {
+  try {
+    const r = await fetch(`/api/solve/${jobId}`);
+    const job = await r.json();
+    renderSolveStatus(job);
+    if (job.status === "done" || job.status === "error") {
+      clearInterval(SOLVE_POLL); SOLVE_POLL = null;
+      $("#solve-start").disabled = false; $("#solve-start").textContent = "Run solver";
+      if (job.status === "done") {
+        await loadSchedule();
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function startSolve() {
+  const btn = $("#solve-start");
+  btn.disabled = true; btn.textContent = "Submitting…";
+  try {
+    const r = await fetch("/api/solve", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ use_catalog: $("#solve-use-catalog").checked }),
+    });
+    const body = await r.json();
+    if (!r.ok) {
+      $("#solve-status").style.display = "block";
+      $("#solve-status").innerHTML = `<div class="toast toast-fail">${body.detail || r.statusText}</div>`;
+      btn.disabled = false; btn.textContent = "Run solver";
+      return;
+    }
+    btn.textContent = "Solving…";
+    SOLVE_POLL = setInterval(() => pollSolve(body.job_id), 3000);
+    pollSolve(body.job_id);
+  } catch (e) {
+    $("#solve-status").style.display = "block";
+    $("#solve-status").innerHTML = `<div class="toast toast-fail">${e.message}</div>`;
+    btn.disabled = false; btn.textContent = "Run solver";
+  }
+}
+
+$("#chat-send").addEventListener("click", sendChat);
+$("#chat-input").addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") sendChat();
+});
+$("#solve-start").addEventListener("click", startSolve);
 
 loadConstraints();
 loadVariables();
