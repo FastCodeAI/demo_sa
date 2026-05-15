@@ -217,6 +217,7 @@
     <section id="schedule">
       <h2>Scheduled orders</h2>
       <div class="summary" id="schedule-summary">loading…</div>
+      <div id="unfilled-explain" style="display:none"></div>
       <div id="schedule-kpis" class="kpis"></div>
       <div class="filter-bar">
         <input id="sf-search" placeholder="filter by order, customer, material…" />
@@ -400,15 +401,46 @@ async function loadSchedule() {
     PLAN = await fetchJSON("/api/plan");
     try { KPIS = await fetchJSON("/api/kpis"); } catch { KPIS = null; }
     const sel = $("#sf-machine");
+    sel.innerHTML = '<option value="">all machines</option>';
     PLAN.machines.forEach((m) => {
       const o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o);
     });
     ["sf-search","sf-machine","sf-status"].forEach((id) => {
-      $("#" + id).addEventListener("input", renderSchedule);
+      const el = $("#" + id);
+      if (!el.dataset.bound) {
+        el.addEventListener("input", renderSchedule);
+        el.dataset.bound = "1";
+      }
     });
     renderSchedule();
+    loadUnfilledExplanation();
   } catch (e) {
     $("#schedule-summary").innerHTML = `<div class="err">failed to load plan: ${e.message}. Run <code>demo_scheduler solve --use-catalog</code> first.</div>`;
+  }
+}
+
+async function loadUnfilledExplanation() {
+  const el = $("#unfilled-explain");
+  const hasUnfilled = PLAN && PLAN.assignments.some((a) => (a.unfilled || 0) > 0);
+  if (!hasUnfilled) { el.style.display = "none"; return; }
+  el.style.display = "block";
+  el.innerHTML = `<div class="response-area">
+    <h3>Why are some orders unfilled?</h3>
+    <div class="phase">scanning binding constraints → calling Explanation agent…</div>
+    <div class="progress"><div class="progress-bar"></div></div>
+  </div>`;
+  try {
+    const r = await fetch("/api/explain-unfilled");
+    if (!r.ok) { el.innerHTML = ""; return; }
+    const body = await r.json();
+    const lines = body.text.split("\n").map((l) => l.trim()).filter(Boolean);
+    el.innerHTML = `<div class="response-area">
+      <h3>Why are some orders unfilled? <span class="phase" style="text-transform:none">· ${body.llm}</span></h3>
+      <div style="white-space: pre-wrap; font-size: 14px;">${lines.join("\n")}</div>
+      <div class="phase" style="margin-top:10px">${body.report_summary.n_unfilled} unfilled · fill rate ${body.report_summary.fill_rate_pct}% · ${body.report_summary.sat_machine_weeks} machine-weeks saturated${body.report_summary.piramal_band_hit_months.length ? " · Piramal band hit in months " + body.report_summary.piramal_band_hit_months.join(", ") : ""}</div>
+    </div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="response-area"><div class="toast toast-fail">explanation failed: ${e.message}</div></div>`;
   }
 }
 

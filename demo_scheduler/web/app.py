@@ -402,3 +402,58 @@ def get_solve(job_id: str) -> JSONResponse:
 def list_solves() -> JSONResponse:
     with JOBS_LOCK:
         return JSONResponse(list(JOBS.values()))
+
+
+@app.get("/api/unfilled-report")
+def get_unfilled_report() -> JSONResponse:
+    """Deterministic per-order binding-reason scan (no LLM)."""
+    from demo_scheduler.config.load import load_config
+    from demo_scheduler.output.unfilled_report import build_unfilled_report
+
+    d = _latest_plan_dir()
+    if d is None:
+        raise HTTPException(404, "no plan.json found")
+    plan = json.loads((d / "plan.json").read_text())
+    cfg = load_config(None)
+    return JSONResponse(build_unfilled_report(plan, cfg))
+
+
+@app.get("/api/explain-unfilled")
+def get_explain_unfilled(use_mock: bool = False, llm_backend: str = "auto") -> JSONResponse:
+    """LLM narration of the unfilled-report. Auto-called by the Schedule tab."""
+    from demo_scheduler.agents.explanation import explain_unfilled
+    from demo_scheduler.agents.llm import MockLLM, default_llm
+    from demo_scheduler.config.load import load_config
+    from demo_scheduler.output.unfilled_report import build_unfilled_report
+
+    d = _latest_plan_dir()
+    if d is None:
+        raise HTTPException(404, "no plan.json found")
+    plan = json.loads((d / "plan.json").read_text())
+    cfg = load_config(None)
+    report = build_unfilled_report(plan, cfg)
+
+    if use_mock:
+        llm = MockLLM(responses=[
+            f"• {report['summary']['n_unfilled']} orders unfilled out of {report['summary']['n_orders']} "
+            f"(fill rate {report['summary']['fill_rate_pct']}%).\n"
+            f"• Dominant reason: capacity on eligible machines is fully used.\n"
+            f"• Loosening Piramal monthly band would free room for the 10ml backlog."
+        ])
+        llm_name = "MockLLM"
+    else:
+        prefer = None if llm_backend == "auto" else llm_backend
+        try:
+            llm = default_llm(prefer=prefer)
+        except RuntimeError as e:
+            raise HTTPException(400, str(e))
+        llm_name = f"{type(llm).__name__} {getattr(llm, 'model', '')}".strip()
+
+    out = explain_unfilled(report, llm)
+    return JSONResponse({
+        "persona": out.persona,
+        "text": out.text,
+        "llm": llm_name,
+        "report_summary": report["summary"],
+        "n_orders_in_report": len(report["orders"]),
+    })
