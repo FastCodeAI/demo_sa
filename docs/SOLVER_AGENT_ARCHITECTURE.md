@@ -185,29 +185,109 @@ rows, each row carrying:
 +--------------------------------------+
 ```
 
-### 3.1 How rows reach the solvers
+### 3.1 How a single row becomes a constraint
+
+Every row carries two things that matter at compile time: a **pattern
+type** (the *shape* of the constraint — sum, balance, mutex,
+no-overlap, two-sided bound, cumulative lag, …) and **parameters**
+(the *numbers* that fill the shape, e.g. `monthly_max: 2_000_000`).
+Together they uniquely determine which decision variables get touched
+and what algebraic form is added to the model.
+
+```
+       YAML row                       Pattern registry
+   +---------------+               +------------------+
+   | id: C-037     |               |  sum_le          |
+   | pattern:      |               |  balance         |
+   |   two_sided_  |               |  mutex           |
+   |   bound       |               |  two_sided_bound | <-- dispatch
+   | parameters:   |    ----->     |  capacity_eq     |     match
+   |   monthly_min |               |  cumulative_lag  |
+   |   monthly_max |               |  resource_no_    |
+   | severity:soft |               |    overlap       |
+   | solver_layer: |               |  ...             |
+   |   MILP_master |               +------------------+
+   +---------------+                        |
+                                            v
+                            +---------------------------------+
+                            |  Pattern compiler               |
+                            |---------------------------------|
+                            |  - picks the right decision     |
+                            |    variables (e.g. monthly      |
+                            |    sum of vol_pack)             |
+                            |  - emits the algebraic shape    |
+                            |    (monthly_min - slack_under   |
+                            |     <= sum <= monthly_max +     |
+                            |     slack_over)                 |
+                            |  - links slack variables to     |
+                            |    the objective                |
+                            +---------------------------------+
+                                            |
+                                            v
+                            +---------------------------------+
+                            |  Lands in solver model          |
+                            |  - MILP: linear constraint      |
+                            |  - CP-SAT: interval / no-overlap|
+                            +---------------------------------+
+```
+
+### 3.2 Field-by-field meaning
+
+```
+field           role at compile time
+--------------  -------------------------------------------------
+pattern         picks the compiler — determines variables &
+                algebraic shape
+parameters      numeric coefficients filling that shape
+severity        hard  → constraint goes in as-is
+                soft  → compiler also emits a slack variable and
+                        wires it into the objective with the
+                        penalty weight from the config
+solver_layer    MILP_master → compiled only into the MILP
+                CP_SAT_seq  → compiled only into the CP-SAT
+                both        → compiled into both
+enabled         a false flag short-circuits compilation entirely;
+                row is loaded but skipped (so disable is reversible
+                without removing the file)
+units           consumed by the Verifier, not by the compiler
+business_rules  consumed by the Verifier, not by the compiler
+```
+
+### 3.3 The full wiring picture
 
 ```mermaid
 flowchart LR
-    YAML[YAML catalog row] --> P{Pattern type}
+    YAML[(Catalog dir<br/>16 YAML rows)] --> LD[Loader<br/>+ schema validate]
+    LD --> P{Per-row<br/>pattern dispatch}
+
     P --> SU[sum_le]
     P --> BAL[balance]
     P --> MTX[mutex]
     P --> TSB[two_sided_bound]
     P --> CAP[capacity_eq]
     P --> CUM[cumulative_lag]
-    P --> ETC[... 10 more]
+    P --> SP[single_placement]
+    P --> AGG[aggregated_balance]
+    P --> ETC[... rest]
 
-    SU & BAL & MTX & TSB & CAP & CUM & ETC --> MILP[Master MILP]
-    MTX & CAP --> CP[CP-SAT]
+    SU --> M[(MILP master)]
+    BAL --> M
+    TSB --> M
+    CAP --> M
+    CUM --> M
+    SP --> M
+    AGG --> M
+    MTX --> M
+    MTX --> CP[(CP-SAT)]
+    ETC --> CP
 ```
 
-Each pattern is a small, reusable compiler — it knows how to translate
-one declarative row into the right kind of decision variable, slack
-variable, or interval constraint. Adding a new constraint type means
-adding a new pattern and a new compiler. Adding a new constraint of an
-existing type means dropping in a YAML file. The MILP and CP-SAT
-compositions are *generated from* the catalog at every solve.
+Adding a new constraint of an **existing type** means dropping in a
+YAML file — no compiler change. Adding a constraint of a **new type**
+means introducing one new pattern and one new compiler, after which
+that shape is reusable for any future row. The MILP and CP-SAT models
+are *generated from* the catalog at every solve, so a YAML edit + a
+re-solve is the entire change-management surface.
 
 ### 3.2 Why both planes read the same store
 
@@ -347,7 +427,135 @@ The LLM's freedom is in the prose, not in the facts.
 
 ---
 
-## 5. End-to-end loop: prompt to plan
+## 5. Outputs — plan, KPIs, and derived reports
+
+The solver stack emits three first-class artifacts and one
+post-processing report. Everything else in the system reads from
+these — there is no other channel between solver output and downstream
+consumers.
+
+### 5.1 The artifacts
+
+```
++-----------------------------------------------------------+
+|  Plan                                                     |
+|-----------------------------------------------------------|
+|  - one row per order                                      |
+|       order_id, customer, material, format                |
+|       qty_demand, qty_packed, unfilled                    |
+|       placements: list of (machine, week, qty)            |
+|  - sequence: list of intervals                            |
+|       (machine, format, start_sec, end_sec, qty)          |
+|       — the CP-SAT layout, Gantt-ready                    |
+|                                                           |
+|  Authoritative description of "what got planned"          |
++-----------------------------------------------------------+
+
++-----------------------------------------------------------+
+|  KPIs                                                     |
+|-----------------------------------------------------------|
+|  - solver: status, objective, solve_time                  |
+|  - service: OTIF %, rated OTIF %, lateness days           |
+|  - utilisation: per-machine idle hours, changeover hours  |
+|  - mix: Piramal monthly volumes vs band                   |
+|  - cpsat: retries, infeasible weeks, interval count       |
+|                                                           |
+|  Aggregate signal — what the plan "scored"                |
++-----------------------------------------------------------+
+
++-----------------------------------------------------------+
+|  Gantt                                                    |
+|-----------------------------------------------------------|
+|  - rendered from plan.sequence                            |
+|  - one row per machine, x = wall-clock time within quarter|
+|  - coloured bars = packing intervals (per format)         |
+|  - narrow stripes = changeovers                           |
+|                                                           |
+|  Visual sanity check — eyeballable, not machine-readable  |
++-----------------------------------------------------------+
+```
+
+### 5.2 Who reads what
+
+```mermaid
+flowchart LR
+    PLAN[(Plan)]
+    KPI[(KPIs)]
+    GAN[(Gantt)]
+    UR[Unfilled-cause scanner<br/>deterministic]
+
+    PLAN --> UR
+    PLAN --> VIEW[Web viewer<br/>Schedule tab]
+    KPI --> VIEW
+    GAN --> VIEW
+
+    KPI --> WI[What-If agent<br/>narrates KPI delta]
+    UR  --> EX[Explanation agent<br/>narrates unfilled orders]
+    KPI --> EX
+
+    PLAN --> AUDIT[(audit log)]
+```
+
+The plan + KPIs are the *only* facts the agents are allowed to talk
+about. Two design rules follow from that:
+
+- The **Explanation agent** runs the deterministic unfilled-cause
+  scanner first, hands the resulting structured report to the LLM,
+  and instructs the model to write prose *over the numbers it was
+  given* — never to invent.
+- The **What-If agent** is handed two KPI snapshots (before / after),
+  computes the per-field delta itself, and hands the LLM the delta to
+  narrate. The LLM never re-derives the delta.
+
+This is the same architectural principle as the Verifier: the LLM is
+allowed to be opinionated about prose, never load-bearing on facts.
+
+### 5.3 The unfilled-cause scanner
+
+A small, deterministic module that turns the plan into a per-order
+explanation of *why* it ended up unfilled. It runs without the LLM
+and produces structured tags:
+
+```
+        Plan + KPIs + Config
+                  |
+                  v
+       +---------------------+
+       |  Scanner (no LLM)   |
+       |---------------------|
+       | - per (machine, w)  |
+       |   utilisation       |
+       | - per format        |
+       |   supply vs demand  |
+       | - Piramal monthly   |
+       |   volume vs band    |
+       | - org no-split      |
+       |   membership        |
+       +---------------------+
+                  |
+                  v
+       +---------------------+
+       |  Per-order reasons  |
+       |---------------------|
+       |  CAPACITY_EXHAUSTED |
+       |  ELIGIBILITY_NARROW |
+       |  PIRAMAL_BAND_HIT   |
+       |  NO_SPLIT_BLOCKED   |
+       |  HEURISTIC_RESIDUAL |
+       +---------------------+
+                  |
+                  v
+        fed into Explanation
+        agent's LLM prompt
+```
+
+The report's invariants — total demand, total unfilled, fill-rate,
+which months hit the band — are computed once and reused by every
+consumer (web tile, agent prompt, what-if).
+
+---
+
+## 6. End-to-end loop: prompt to plan
 
 A typical "the customer wants a higher Piramal cap, what would that
 get us?" interaction flows through every plane:
@@ -389,7 +597,7 @@ Two decision points keep this safe:
 
 ---
 
-## 6. Why this shape
+## 7. Why this shape
 
 The split exists because three different reasoning styles are needed
 to plan production cleanly:
