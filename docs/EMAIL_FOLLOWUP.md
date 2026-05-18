@@ -124,31 +124,42 @@ Best,
 Hi [name],
 
 Quick follow-up: we've built a working **proof of concept** of the
-scheduler — end-to-end, on the Q1 2025 dataset — to de-risk the
+scheduler — end-to-end, on the 2025 dataset — to de-risk the
 architecture before we commit to the full build. Sharing it now so
 you can react before we go bigger.
 
-**Attached:** the architecture document and a short screen recording
+PFB, the architecture document and a short screen recording
 of the interactive UI — natural-language constraint edits, a
 deterministic Verifier gating each change, a re-solve, and the agent
 narrating why a handful of orders went unfilled.
 
-**Where we are.** Two-stage hybrid solver (master MILP for allocation,
-CP-SAT for within-week sequencing), a versioned catalog of 16
-declarative constraint rules feeding both stages, and a seven-agent
-stack on top with a deterministic Verifier as the trust boundary.
-Q1 2025 runs at **98.8 % OTIF, optimal, ~6 min**. Every business rule
-lives as data, not code.
+Current PoC includes:
+- Two-stage hybrid solver (master MILP for allocation,
+CP-SAT for within-week sequencing)
+- A versioned catalog of 16 declarative constraint rules feeding both stages
+- A seven-agent stack on top with a deterministic Verifier as the trust boundary
+- A rolling-quarter run with previous-quarter unfilled rolled into the next
+quarter's demand:
+
+  | Quarter | Demand (units) | Unfilled | OTIF |
+  |---|---:|---:|---:|
+  | Q1 (+ 2024 BO) | 30.13 M | 0 | **100.00 %** |
+  | Q2 | 18.48 M | 0 | **100.00 %** |
+  | Q3 | 17.38 M | 0 | **100.00 %** |
+  | Q4 | 19.35 M | 49 k | **99.75 %** |
+  | **2025 total** | **85.34 M** | **49 k** | **99.94 %** |
+
+  Every business rule lives as data, not code.
 
 **Ask.** Does the constraint set, as enumerated in the doc and
 browseable in the UI, cover everything Production, Sales, and Planning
 expect the scheduler to honour? Are there informal rules we should
 promote into the catalog?
 
-**Next phase.** If the architecture lands well, we'd build the full
-production system directly on top of this PoC — same catalog, same
-solver stack, same agent layer — extending the loop from
-*interactive* to *reactive*: telemetry-driven disruption detection,
+If the architecture lands well, we'd build the full
+production system directly on top of this PoC. 
+
+Extending the loop from *interactive* to *reactive*: telemetry-driven disruption detection,
 auto-replan with Verifier gating, an Approval Queue for governed
 changes, an operator dashboard, and a clean SAP write-back path.
 
