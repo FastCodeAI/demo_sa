@@ -13,8 +13,11 @@ recipient.
 
 Hi [name],
 
-Following up on our earlier note: we've built and verified the first
-end-to-end version of the scheduler architecture. Two artifacts
+Following up on our earlier note: we've built a working **proof of
+concept** of the scheduler architecture, end-to-end, on the Q1 2025
+dataset. The intent of this PoC was to de-risk the whole stack — not
+to ship a production system yet — and to give you something concrete
+to react to before we commit to the larger build. Two artifacts
 attached for your review:
 
 - **Architecture document** — the full picture, from solver core to
@@ -24,10 +27,12 @@ attached for your review:
   clear it, re-solving, and seeing the agent narrate why a handful of
   orders end up unfilled.
 
-**What we've built**
+**What the PoC covers**
 
 A working three-plane system on the Q1 2025 dataset (1,824 demand
-lines, ~30 M ampoules after backorder roll-in):
+lines, ~30 M ampoules after backorder roll-in). Every layer is
+intentionally minimal but real — the goal was to prove the
+architecture, not to optimise any single piece:
 
 - **Solver core.** A two-stage hybrid: a master MILP allocates orders
   to (machine, week) cells across the quarter; a CP-SAT layer lays
@@ -70,11 +75,14 @@ all in the catalog. Before we go further, we'd like to confirm:
 - Are the four personas the UI explains for (sales, production,
   compliance, planner) the right cut?
 
-**What we propose to build next — automated planning and control**
+**What we propose to build next — production system on top of this PoC**
 
-The current build is *interactive*: a planner edits a rule, presses
-re-solve, reviews the new plan. The next phase makes the same loop
-*reactive*:
+If the architecture lands well, we'd build the full production system
+directly on top of what's already here — the catalog, the solver
+stack, the agent layer, and the Verifier all carry forward unchanged.
+The current PoC is *interactive*: a planner edits a rule, presses
+re-solve, reviews the new plan. The production system turns the same
+loop *reactive* and extends it with the operational surface:
 
 - **Disruption detection.** A telemetry feed (ProdAction / Photocells
   / SAP downtime tickets) lands as an event on the agent stack.
@@ -115,8 +123,10 @@ Best,
 
 Hi [name],
 
-Quick follow-up: the first end-to-end version of the scheduler is up
-and we'd like your read.
+Quick follow-up: we've built a working **proof of concept** of the
+scheduler — end-to-end, on the Q1 2025 dataset — to de-risk the
+architecture before we commit to the full build. Sharing it now so
+you can react before we go bigger.
 
 **Attached:** the architecture document and a short screen recording
 of the interactive UI — natural-language constraint edits, a
@@ -135,7 +145,9 @@ browseable in the UI, cover everything Production, Sales, and Planning
 expect the scheduler to honour? Are there informal rules we should
 promote into the catalog?
 
-**Next phase.** If the architecture works, we'd extend it from
+**Next phase.** If the architecture lands well, we'd build the full
+production system directly on top of this PoC — same catalog, same
+solver stack, same agent layer — extending the loop from
 *interactive* to *reactive*: telemetry-driven disruption detection,
 auto-replan with Verifier gating, an Approval Queue for governed
 changes, an operator dashboard, and a clean SAP write-back path.
